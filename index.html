@@ -295,7 +295,7 @@
     height: 100%;
     object-fit: cover;
     display: none;
-    filter: sepia(0.1) hue-rotate(80deg) saturate(0.7);
+
   }
 
   #localVideo {
@@ -309,7 +309,7 @@
     background: var(--surface);
     z-index: 10;
     display: none;
-    filter: sepia(0.1) hue-rotate(80deg) saturate(0.7);
+
   }
 
   .video-area::before {
@@ -780,12 +780,28 @@ window.onload = () => {
 };
 
 function initPeer() {
-  peer = new Peer(undefined, { debug: 0 });
+  const isSecure = location.protocol === 'https:';
+  const iceServers = [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' }
+  ];
+  if (isSecure) {
+    iceServers.push(
+      { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+      { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' }
+    );
+  }
+
+  peer = new Peer(undefined, {
+    debug: 1,
+    config: { iceServers }
+  });
 
   peer.on('open', id => {
     document.getElementById('myId').textContent = id;
     setSigStatus('ok');
     log('NODE INITIALIZED · ID: ' + id, 'ok');
+    log('ICE MODE: ' + (isSecure ? 'STUN + TURN (HTTPS)' : 'STUN ONLY (LOCAL FILE)'), 'warn');
     refreshCallButtons();
   });
 
@@ -794,14 +810,18 @@ function initPeer() {
     setSigStatus('err');
     if (['server-error','socket-error','socket-closed','network'].includes(err.type)) {
       setSigStatus('connecting');
-      setTimeout(initPeer, 4000);
+      setTimeout(() => {
+        if (peer && !peer.destroyed) { peer.reconnect(); } else { initPeer(); }
+      }, 4000);
     }
   });
 
   peer.on('disconnected', () => {
     setSigStatus('err');
     log('SIGNALING DISCONNECTED — RECONNECTING...', 'warn');
-    peer.reconnect();
+    setTimeout(() => {
+      if (peer && !peer.destroyed) { peer.reconnect(); } else { initPeer(); }
+    }, 2000);
   });
 
   // ── Incoming video/audio call ──
