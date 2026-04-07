@@ -295,7 +295,7 @@
     height: 100%;
     object-fit: cover;
     display: none;
-    filter: sepia(0.0) hue-rotate(0deg) saturate(1.0);
+    filter: contrast(1.1) brightness(0.95) saturate(1.2) hue-rotate(-10deg);
   }
 
   #localVideo {
@@ -309,7 +309,7 @@
     background: var(--surface);
     z-index: 10;
     display: none;
-    filter: sepia(0.0) hue-rotate(0deg) saturate(1.0);
+    filter: contrast(1.1) brightness(0.95) saturate(1.2) hue-rotate(-10deg);
   }
 
   .video-area::before {
@@ -320,7 +320,20 @@
     pointer-events: none;
     z-index: 1;
   }
-
+  
+.video-area::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at center,
+    rgba(0,255,0,0.06),
+    rgba(0,0,0,0.1)
+  );
+  pointer-events: none;
+  z-index: 2;
+}
+  
   .corner {
     position: absolute;
     width: 16px;
